@@ -53,29 +53,6 @@
         .catch(e => error(e));
     }
   }
-  let ogp = navigator.geolocation.getCurrentPosition;
-  navigator.geolocation.getCurrentPosition = function(success, error, options) {
-    if (!success)
-      throw new TypeError(
-        "Failed to execute 'getCurrentPosition' on 'Geolocation': 1 argument required, but only 0 present."
-      );
-    if (typeof success != "function")
-      "Failed to execute 'getCurrentPosition' on 'Geolocation': parameter 1 is not of type 'Function'.";
-    if (error)
-      if (typeof error != "function")
-        "Failed to execute 'getCurrentPosition' on 'Geolocation': parameter 2 is not of type 'Function'.";
-    ogp.call(
-      this,
-      function internalSuccessCb(s) {
-        success(s);
-      },
-      function internalErrorCb(e) {
-        enable();
-        navigator.geolocation.getCurrentPosition(success, error, options);
-      },
-      options
-    );
-  };
   function enable() {
     window.GeolocationPositionError = GeolocationPositionError;
     window.GeolocationCoordinates = GeolocationCoordinates;
@@ -88,5 +65,31 @@
       }
     });
   }
-  if (!navigator.geolocation) enable();
+  if (!navigator.geolocation) {
+    enable();
+  } else {
+    let ogp = navigator.geolocation.getCurrentPosition;
+    navigator.geolocation.getCurrentPosition = function(success, error, options) {
+      if (!success)
+        throw new TypeError(
+          "Failed to execute 'getCurrentPosition' on 'Geolocation': 1 argument required, but only 0 present."
+        );
+      if (typeof success != "function")
+        "Failed to execute 'getCurrentPosition' on 'Geolocation': parameter 1 is not of type 'Function'.";
+      if (error)
+        if (typeof error != "function")
+          "Failed to execute 'getCurrentPosition' on 'Geolocation': parameter 2 is not of type 'Function'.";
+      ogp.call(
+        this,
+        function internalSuccessCb(s) {
+          success(s);
+        },
+        function internalErrorCb(e) {
+          enable();
+          navigator.geolocation.getCurrentPosition(success, error, options);
+        },
+        options
+      );
+    };
+  }
 })();
